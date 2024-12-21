@@ -1,0 +1,2 @@
+/home/pactivsa/datamining/build/CMakeFiles/edit_cache.dir
+/home/pactivsa/datamining/build/CMakeFiles/rebuild_cache.dir
