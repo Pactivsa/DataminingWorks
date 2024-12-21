@@ -11,23 +11,7 @@ from surprise.model_selection import cross_validate
 # path to dataset file
 file_path = "ml-latest-small/ratings.csv"
 
-reader = Reader(line_format="user item rating timestamp", sep=",", skip_lines=1)
 
-data = Dataset.load_from_file(file_path, reader=reader)
-
-
-sim_options = {
-    "name": "cosine",  # Use cosine similarity (can be changed to "pearson" or others)
-    "user_based": True,  # Set to False for item-based collaborative filtering
-}
-
-algorithms = {
-    "SVD": SVD,
-    "KNNBasic": KNNBasic,
-    "KNNWithMeans": KNNWithMeans,
-    "KNNWithZScore": KNNWithZScore,
-    "KNNBaseline": KNNBaseline,
-}
 
 
 def algorithms_cross_validate(algorithms, data, sim_option):
@@ -58,7 +42,8 @@ def algorithms_cross_validate(algorithms, data, sim_option):
 
 def plot_rmse_mae(all_results, sim_option):
     # exit()
-    option1 = sim_option["name"]
+    option1 = sim_option["name"] + "--user_based_" + str(sim_option["user_based"])
+    
     import os
     import time
     root_path = "figures"
@@ -122,5 +107,41 @@ def plot_rmse_mae(all_results, sim_option):
 
 
 if __name__ == "__main__":
-    all_results = algorithms_cross_validate(algorithms, data, sim_options)
-    plot_rmse_mae(all_results, sim_options)
+
+    reader = Reader(line_format="user item rating timestamp", sep=",", skip_lines=1)
+
+    data = Dataset.load_from_file(file_path, reader=reader)
+
+    sim_options = [
+        {
+            "name": "cosine",  # Use cosine similarity (can be changed to "pearson" or others)
+            "user_based": True,  # Set to False for item-based collaborative filtering
+        },
+        {
+            "name": "pearson",
+            "user_based": True,
+        },
+        {
+            "name": "cosine",
+            "user_based": False,
+        },
+        {
+            "name": "pearson",
+            "user_based": False,
+        },
+
+    ]
+
+    algorithms = {
+        "SVD": SVD,
+        "KNNBasic": KNNBasic,
+        "KNNWithMeans": KNNWithMeans,
+        "KNNWithZScore": KNNWithZScore,
+        "KNNBaseline": KNNBaseline,
+    }
+    # all_results = algorithms_cross_validate(algorithms, data, sim_options)
+    # plot_rmse_mae(all_results, sim_options)
+    for sim_option in sim_options:
+        plot_rmse_mae(algorithms_cross_validate(algorithms, data, sim_option), sim_option)
+
+        
