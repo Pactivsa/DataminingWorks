@@ -12,23 +12,21 @@ from surprise.model_selection import cross_validate
 file_path = "ml-latest-small/ratings.csv"
 
 
-
-
+# 交叉验证结果
 def algorithms_cross_validate(algorithms, data, sim_option):
     all_results = {}
     for algo_name, algo in algorithms.items():
-        # print(type(algo))
-        # exit()
         if algo_name == "SVD":
             algo_instance = algo()
         else:
             algo_instance = algo(sim_options=sim_option)
 
         print(f"测试算法: {algo_name}")
-        # Perform cross-validation
+
+        # 交叉验证
         result = cross_validate(algo_instance, data, measures=["RMSE", "MAE"], cv=10, verbose=True)
 
-        # Prepare data for saving
+        #  data saving
         result_dict = {
             "Fold": [f"Fold {i + 1}" for i in range(len(result['test_rmse']))] + ["Mean", "Std"],
             "RMSE": np.append(result["test_rmse"], [np.mean(result["test_rmse"]), np.std(result["test_rmse"])]),
@@ -40,6 +38,7 @@ def algorithms_cross_validate(algorithms, data, sim_option):
     return all_results
 
 
+# 可视化
 def plot_rmse_mae(all_results, sim_option):
     # exit()
     option1 = sim_option["name"] + "--user_based_" + str(sim_option["user_based"])
@@ -54,16 +53,15 @@ def plot_rmse_mae(all_results, sim_option):
     if not os.path.exists(file_path):
         os.makedirs(file_path)
 
-    # Prepare data for visualization
     rmse_data = {}
     mae_data = {}
 
     for algo_name, result_dict in all_results.items():
 
-        rmse_data[algo_name] = result_dict["RMSE"][:-2] # 排除Std和Mean
+        rmse_data[algo_name] = result_dict["RMSE"][:-2]  # 排除Std和Mean
         mae_data[algo_name] = result_dict["MAE"][:-2]
 
-        # 将算法总结果存入文件
+        # 将算法总结果存入excel文件
         result_df = pd.DataFrame(result_dict).set_index("Fold").T
 
         result_df.to_excel(os.path.join(file_path, f"{algo_name}.xlsx"))
@@ -73,7 +71,7 @@ def plot_rmse_mae(all_results, sim_option):
     mae_df = pd.DataFrame(mae_data)
 
 
-    # Plot RMSE results
+    # RMSE results
     plt.figure(figsize=(12, 6))
     rmse_df.plot(kind="line", marker="o", ax=plt.gca())
     plt.title(f"RMSE 各算法交叉验证结果({option1})", fontsize=14)
@@ -89,7 +87,7 @@ def plot_rmse_mae(all_results, sim_option):
     plt.show()
 
 
-    # Plot MAE results
+    # MAE results
     plt.figure(figsize=(12, 6))
     mae_df.plot(kind="line", marker="o", ax=plt.gca())
     plt.title(f"MAE 各算法交叉验证结果({option1})", fontsize=14)
@@ -114,19 +112,27 @@ if __name__ == "__main__":
 
     sim_options = [
         {
-            "name": "cosine",  # Use cosine similarity (can be changed to "pearson" or others)
-            "user_based": True,  # Set to False for item-based collaborative filtering
+            "name": "cosine",
+            "user_based": True,
         },
         {
             "name": "pearson",
             "user_based": True,
         },
         {
+            "name": "msd",
+            "user_based": True,
+        },
+        {
+            "name": "pearson",
+            "user_based": False,
+        },
+        {
             "name": "cosine",
             "user_based": False,
         },
         {
-            "name": "pearson",
+            "name": "msd",
             "user_based": False,
         },
 
@@ -139,8 +145,7 @@ if __name__ == "__main__":
         "KNNWithZScore": KNNWithZScore,
         "KNNBaseline": KNNBaseline,
     }
-    # all_results = algorithms_cross_validate(algorithms, data, sim_options)
-    # plot_rmse_mae(all_results, sim_options)
+
     for sim_option in sim_options:
         plot_rmse_mae(algorithms_cross_validate(algorithms, data, sim_option), sim_option)
 
